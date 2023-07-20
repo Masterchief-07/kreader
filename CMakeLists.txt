@@ -16,7 +16,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set the project name and language
 project(
-  myproject
+  kreader
   VERSION 0.0.1
   DESCRIPTION ""
   HOMEPAGE_URL "%%myurl%%"
@@ -104,7 +104,7 @@ include(cmake/PackageProject.cmake)
 # we know we want to ship
 myproject_package_project(
   TARGETS
-  intro
+  kreader_exec
   myproject_options
   myproject_warnings
   # FIXME: this does not work! CK
