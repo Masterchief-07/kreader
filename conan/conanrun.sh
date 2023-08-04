@@ -1,0 +1,1 @@
+. "/home/jonathan/PROGRAMMING/PROJECTS/kreadernew/conan/conanrunenv-release-x86_64.sh"

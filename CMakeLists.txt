@@ -1,121 +1,89 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.14)
 
-# This template attempts to be "fetch_content"-able
-# so that it works well with tools like CPM or other
-# manual dependency management
+include(cmake/prelude.cmake)
 
-# Only set the cxx_standard if it is not set by someone else
-if (NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 20)
-endif()
-
-# strongly encouraged to enable this globally to avoid conflicts between
-# -Wpedantic being enabled and -std=c++20 and -std=gnu++20 for example
-# when compiling with PCH enabled
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Set the project name and language
 project(
-  kreader
-  VERSION 0.0.1
-  DESCRIPTION ""
-  HOMEPAGE_URL "%%myurl%%"
-  LANGUAGES CXX C)
+    kreader
+    VERSION 0.0.1
+    DESCRIPTION "kreader a csv file reader"
+    HOMEPAGE_URL "https://example.com/"
+    LANGUAGES CXX
+)
 
-include(cmake/PreventInSourceBuilds.cmake)
-include(ProjectOptions.cmake)
+include(cmake/project-is-top-level.cmake)
+include(cmake/variables.cmake)
 
+# ---- Declare library ----
 
-myproject_setup_options()
+add_library(
+    kreader_kreader
+    source/csv.cpp
+)
+add_library(kreader::kreader ALIAS kreader_kreader)
 
-myproject_global_options()
-include(Dependencies.cmake)
-myproject_setup_dependencies()
+include(GenerateExportHeader)
+generate_export_header(
+    kreader_kreader
+    BASE_NAME kreader
+    EXPORT_FILE_NAME export/kreader/kreader_export.hpp
+    CUSTOM_CONTENT_FROM_VARIABLE pragma_suppress_c4251
+)
 
-myproject_local_options()
-
-# don't know if this should be set globally from here or not...
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-
-set(GIT_SHA
-    "Unknown"
-    CACHE STRING "SHA this build was generated from")
-string(
-  SUBSTRING "${GIT_SHA}"
-            0
-            8
-            GIT_SHORT_SHA)
-
-target_compile_features(myproject_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
-
-add_library(myproject::myproject_options ALIAS myproject_options)
-add_library(myproject::myproject_warnings ALIAS myproject_warnings)
-
-#add_library(myproject::myproject_options INTERFACE IMPORTED)
-#add_library(myproject::myproject_warnings INTERFACE IMPORTED)
-
-# configure files based on CMake configuration options
-add_subdirectory(configured_files)
-
-# Adding the src:
-add_subdirectory(src)
-
-# Don't even look at tests if we're not top level
-if(NOT PROJECT_IS_TOP_LEVEL)
-  return()
+if(NOT BUILD_SHARED_LIBS)
+  target_compile_definitions(kreader_kreader PUBLIC KREADER_STATIC_DEFINE)
 endif()
 
-# Adding the tests:
-include(CTest)
+set_target_properties(
+    kreader_kreader PROPERTIES
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN YES
+    VERSION "${PROJECT_VERSION}"
+    SOVERSION "${PROJECT_VERSION_MAJOR}"
+    EXPORT_NAME kreader
+    OUTPUT_NAME kreader
+)
 
-if(BUILD_TESTING)
-  message(AUTHOR_WARNING "Building Tests. Be sure to check out test/constexpr_tests.cpp for constexpr testing")
-  add_subdirectory(test)
+target_include_directories(
+    kreader_kreader ${warning_guard}
+    PUBLIC
+    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+)
+
+target_include_directories(
+    kreader_kreader SYSTEM
+    PUBLIC
+    "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/export>"
+)
+
+target_compile_features(kreader_kreader PUBLIC cxx_std_20)
+
+# find_package(fmt REQUIRED)
+# target_link_libraries(kreader_kreader PRIVATE fmt::fmt)
+
+# ---- Install rules ----
+
+if(NOT CMAKE_SKIP_INSTALL_RULES)
+  include(cmake/install-rules.cmake)
 endif()
 
+# ---- Examples ----
 
-if(myproject_BUILD_FUZZ_TESTS)
-  message(AUTHOR_WARNING "Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")
-  if (NOT myproject_ENABLE_ADDRESS_SANITIZER AND NOT myproject_ENABLE_THREAD_SANITIZER)
-    message(WARNING "You need asan or tsan enabled for meaningful fuzz testing")
+if(PROJECT_IS_TOP_LEVEL)
+  option(BUILD_EXAMPLES "Build examples tree." "${kreader_DEVELOPER_MODE}")
+  if(BUILD_EXAMPLES)
+    add_subdirectory(example)
   endif()
-  add_subdirectory(fuzz_test)
-
 endif()
 
-# If MSVC is being used, and ASAN is enabled, we need to set the debugger environment
-# so that it behaves well with MSVC's debugger, and we can run the target from visual studio
-if(MSVC)
-  get_all_installable_targets(all_targets)
-  message("all_targets=${all_targets}")
-  set_target_properties(${all_targets} PROPERTIES VS_DEBUGGER_ENVIRONMENT "PATH=$(VC_ExecutablePath_x64);%PATH%")
-endif()
+# ---- Developer mode ----
 
-# set the startup project for the "play" button in MSVC
-set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT intro)
-
-if(CMAKE_SKIP_INSTALL_RULES)
+if(NOT kreader_DEVELOPER_MODE)
   return()
+elseif(NOT PROJECT_IS_TOP_LEVEL)
+  message(
+      AUTHOR_WARNING
+      "Developer mode is intended for developers of kreader"
+  )
 endif()
 
-include(cmake/PackageProject.cmake)
-
-# Add other targets that you want installed here, by default we just package the one executable
-# we know we want to ship
-myproject_package_project(
-  TARGETS
-  kreader_exec
-  myproject_options
-  myproject_warnings
-  # FIXME: this does not work! CK
-  # PRIVATE_DEPENDENCIES_CONFIGURED project_options project_warnings
-)
-
-# Experience shows that explicit package naming can help make it easier to sort
-# out potential ABI related issues before they start, while helping you
-# track a build to a specific GIT SHA
-set(CPACK_PACKAGE_FILE_NAME
-    "${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}-${GIT_SHORT_SHA}-${CMAKE_SYSTEM_NAME}-${CMAKE_BUILD_TYPE}-${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}"
-)
-
-include(CPack)
+include(cmake/dev-mode.cmake)

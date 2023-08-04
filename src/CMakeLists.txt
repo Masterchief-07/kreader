@@ -1,2 +1,0 @@
-add_subdirectory(kreader)
-add_subdirectory(kreader_test_sample)
