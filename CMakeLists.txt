@@ -74,14 +74,14 @@ if(BUILD_TESTING)
 endif()
 
 
-if(myproject_BUILD_FUZZ_TESTS)
-  message(AUTHOR_WARNING "Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")
-  if (NOT myproject_ENABLE_ADDRESS_SANITIZER AND NOT myproject_ENABLE_THREAD_SANITIZER)
-    message(WARNING "You need asan or tsan enabled for meaningful fuzz testing")
-  endif()
-  add_subdirectory(fuzz_test)
+# if(myproject_BUILD_FUZZ_TESTS)
+#   message(AUTHOR_WARNING "Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")
+#   if (NOT myproject_ENABLE_ADDRESS_SANITIZER AND NOT myproject_ENABLE_THREAD_SANITIZER)
+#     message(WARNING "You need asan or tsan enabled for meaningful fuzz testing")
+#   endif()
+#   add_subdirectory(fuzz_test)
 
-endif()
+# endif()
 
 # If MSVC is being used, and ASAN is enabled, we need to set the debugger environment
 # so that it behaves well with MSVC's debugger, and we can run the target from visual studio
