@@ -10,27 +10,20 @@ namespace kreader{
     // {
         
     // }
-    CSV::CSV(std::filesystem::path& file_path, 
+    CSV::CSV(const std::string& file_path, 
             bool has_header): 
         m_filepath{file_path}
         ,m_file{m_filepath, std::ios::in} 
         ,m_size{std::make_pair(0, 0)}
         ,m_has_header{has_header}
     {
-        assert(m_file.is_open() == true);
-        bool first = true;
-        for(std::string data; std::getline(m_file, data); m_size.second++)
+        if (has_header)
         {
-            if (first && m_has_header)
-            {
-                std::istringstream streamdata{data};
-                for(std::string content; std::getline(streamdata, content, ','); )
-                {
-                    m_header.push_back(content);
-                }
-                m_size.first = m_header.size();
-                first=false;
-            }
+            m_size = getFileSize(m_filepath, &m_header); 
+        }
+        else
+        {
+            m_size = getFileSize(m_filepath); 
         }
         // m_file.seekg(0, std::ios::beg);
         m_file.close();
@@ -40,6 +33,33 @@ namespace kreader{
         m_file.close();
     }
 
+    // void CSV::open(const std::string& file_path, bool has_header)
+    // {
+    //     m_filepath.
+
+    // }
+
+    std::pair<size_t, size_t> CSV::getFileSize(const std::filesystem::path& path, std::vector<std::string>* header)
+    {
+        std::pair<size_t, size_t> size;
+        std::ifstream file{path};
+        assert(file.is_open() == true);
+        bool first = true;
+        for(std::string data; std::getline(file, data); size.second++)
+        {
+            if (first && header!=nullptr)
+            {
+                std::istringstream streamdata{data};
+                (*header).clear();
+                for(std::string content; std::getline(streamdata, content, ','); size.first++)
+                {
+                    (*header).push_back(content);
+                }
+                first=false;
+            }
+        }
+        return size;
+    }
     std::stringstream CSV::getDataIndex(size_t index)
     {
         assert(index < m_header.size());
@@ -74,22 +94,6 @@ namespace kreader{
         m_file.close();
         return result;
     }
-
-    // template<>
-    // std::vector<std::string> CSV::operator[](size_t index)
-    // {
-    //     auto content = getDataIndex(index);
-    //     std::vector<std::string> result{};
-    //     for(std::string data; std::getline(content, data, '\n');)
-    //     {
-    //         result.push_back(data);
-    //     }
-    //     // for (auto const& x: result)
-    //     // {
-    //     //     std::cout<<x<<"\n";
-    //     // }
-    //     return result;
-    // }
 }
 
 void kreader::HelloWorld(){
