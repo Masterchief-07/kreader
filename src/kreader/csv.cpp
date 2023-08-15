@@ -4,6 +4,8 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include <stdexcept>
+#include <format>
 
 namespace kreader{
     // CSV::CSV(const std::string& file_path):CSV(std::move(std::filesystem::path{file_path}))
@@ -29,21 +31,50 @@ namespace kreader{
         m_file.close();
     }
 
-    CSV::~CSV(){
-        m_file.close();
+    CSV::~CSV()
+    {
+        Close();
     }
 
-    // void CSV::open(const std::string& file_path, bool has_header)
-    // {
-    //     m_filepath.
+    void CSV::Open(const std::string& file_path, bool has_header)
+    {
+        m_filepath = std::filesystem::path{file_path};
+        m_file.open(m_filepath);
+        assert(m_file.is_open() == true);
+        m_has_header=has_header;
+        if (has_header)
+        {
+            m_size = getFileSize(m_filepath, &m_header); 
+        }
+        else
+        {
+            m_size = getFileSize(m_filepath); 
+        }
+        // m_file.seekg(0, std::ios::beg);
+        m_file.close();
 
-    // }
+    }
+    void CSV::Close()
+    {
+        if (m_file.is_open())
+        {
+            m_file.close();
+        }
+
+    }
+    void CSV::verifyPath(const std::filesystem::path& path)
+    {
+        if(! std::filesystem::exists(path))
+        {
+            throw std::runtime_error("file doesnt exist");
+        }
+    }
 
     std::pair<size_t, size_t> CSV::getFileSize(const std::filesystem::path& path, std::vector<std::string>* header)
     {
         std::pair<size_t, size_t> size;
+        verifyPath(path);
         std::ifstream file{path};
-        assert(file.is_open() == true);
         bool first = true;
         for(std::string data; std::getline(file, data); size.second++)
         {
@@ -60,13 +91,13 @@ namespace kreader{
         }
         return size;
     }
-    std::stringstream CSV::getDataIndex(size_t index)
+    std::stringstream CSV::getDataIndex(const size_t& index)
     {
-        assert(index < m_header.size());
+        assert(index < m_size.first);
         std::stringstream result;
-        m_file.open(m_filepath);
+        std::ifstream file{m_filepath};
         bool first = true;
-        for (std::string line; std::getline(m_file, line, '\n');)
+        for (std::string line; std::getline(file, line, '\n');)
         {
             if(m_has_header && first)
             {
@@ -91,7 +122,37 @@ namespace kreader{
                 result << data <<"\n";
             }
         }
-        m_file.close();
+        file.close();
+        return result;
+    }
+
+    size_t CSV::getIndexFromString(std::string_view index_name){
+        if (!m_has_header)
+        {
+            throw std::runtime_error("file has no header");
+        }
+        auto finded = std::find(m_header.begin(), m_header.end(), index_name);
+        if (finded == m_header.end())
+        {
+            auto message = std::format("{} not find in header", index_name);
+            throw std::runtime_error(message);
+        }
+        auto dist = std::distance(m_header.begin(), finded);
+        return static_cast<size_t>(dist);
+
+    }
+    std::vector<std::size_t> CSV::getIndexFromString(const std::vector<std::string_view>& indexes_name)
+    {
+        if (!m_has_header)
+        {
+            throw std::runtime_error("file has no header");
+        }
+        std::vector<std::size_t> result;
+        std::for_each(indexes_name.begin(), indexes_name.end(), 
+                [this, &result](std::string_view name){
+                    result.push_back(getIndexFromString(name));
+                }
+            );
         return result;
     }
 }
