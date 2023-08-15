@@ -1,13 +1,13 @@
-#include <kreader/csv.hpp>
 #include <iostream>
 #include <cassert>
+#include <kreader/csv.hpp>
 
 namespace kreader{
     // CSV::CSV(const std::string& file_path):CSV(std::move(std::filesystem::path{file_path}))
     // {
         
     // }
-    CSV::CSV(std::filesystem::path& file_path): m_filepath{file_path}
+    CSV::CSV(std::filesystem::path file_path): m_filepath{std::move(file_path)}
         ,m_file{m_filepath, std::ios::in}
         ,m_size{std::make_pair(0, 0)}
     {

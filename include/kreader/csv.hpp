@@ -12,7 +12,7 @@ namespace kreader{
 
         public:
         // CSV(const std::string& file_path);
-        explicit CSV(std::filesystem::path& file_path);
+        explicit CSV(std::filesystem::path file_path);
         CSV(const CSV&) = delete;
         CSV& operator=(const CSV&) = delete;
         CSV(const CSV&&) noexcept = delete;
