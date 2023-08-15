@@ -45,6 +45,14 @@ if(WIN32 AND BUILD_SHARED_LIBS)
     COMMAND_EXPAND_LISTS)
 endif()
 
+add_executable(benchmarks tests_benchmarks.cpp)
+target_link_libraries(
+  tests
+  PRIVATE myproject::myproject_warnings
+          myproject::myproject_options
+          kreader::kreader
+          Catch2::Catch2WithMain)
+
 # automatically discover tests that are defined in catch based test files you can modify the unittests. Set TEST_PREFIX
 # to whatever you want, or use different for different binaries
 catch_discover_tests(
